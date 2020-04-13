@@ -1,0 +1,52 @@
+{
+  "tagName": "$rect",
+  "props": {
+    "style": {
+      "position": "absolute",
+      "left": 0,
+      "top": 0,
+      "width": 100,
+      "height": 100,
+      "strokeWidth": 0,
+      "fill": "#F00"
+    }
+  },
+  "animate": [{
+    "value": [
+      {
+        "transform": "translateX(0)",
+        "easing": "easeIn"
+      },
+      {
+        "transform": "translateX(200px)"
+      }
+    ],
+    "options": {
+      "duration": 5000,
+      "fill": "forwards",
+      "var-playbackRate": {
+        "id": "playbackRate"
+      }
+    }
+  }, {
+    "value": [
+      {
+        "top": 0,
+        "easing": "easeOut"
+      },
+      {
+        "top": 100,
+        "var-top": {
+          "id": "top"
+        }
+      }
+    ],
+    "options": {
+      "duration": 5000,
+      "fill": "forwards",
+      "var-playbackRate": {
+        "id": "playbackRate"
+      }
+    }
+  }]
+}

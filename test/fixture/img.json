@@ -1,0 +1,32 @@
+{
+  "tagName": "div",
+  "props":{
+    "style":{
+      "w":"100%",
+      "h":"auto"
+    }
+  },
+  "children": [{
+    "tagName": "img",
+    "props": {
+      "src": "xxoo1",
+      "style": {
+        "width": 40,
+        "height": 30
+      }
+    }
+  }, {
+    "tagName": "div",
+    "props": {},
+    "children": [{
+      "tagName": "img",
+      "props": {
+        "src": "xxoo2",
+        "style": {
+          "width": 100,
+          "height": 80
+        }
+      }
+    }]
+  }]
+}

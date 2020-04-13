@@ -1,0 +1,52 @@
+{
+  "tagName": "div",
+  "props":{
+    "style":{
+      "width":"100%",
+      "height":"auto"
+    }
+  },
+  "children": [{
+    "tagName": "$polygon",
+    "props": {
+      "style": {
+        "position": "absolute",
+        "left": 49,
+        "top": 1,
+        "display": "none",
+        "width": 12,
+        "height": 10.61,
+        "fill": "transparent"
+      }
+    }
+  }],
+  "animate": [{
+    "value": [
+      {
+        "transform": "translateX(0)",
+        "easing": "easeIn"
+      },
+      {
+        "transform": "translateX(200px)"
+      }
+    ],
+    "options": {
+      "duration": 5000,
+      "fill": "forwards"
+    }
+  }, {
+    "value": [
+      {
+        "top": 0,
+        "easing": "easeOut"
+      },
+      {
+        "top": 100
+      }
+    ],
+    "options": {
+      "duration": 5000,
+      "fill": "forwards"
+    }
+  }]
+}
