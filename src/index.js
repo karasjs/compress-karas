@@ -81,6 +81,10 @@ function equalAnimateValue(a, b) {
   return res;
 }
 
+function isAnimateValueUnavailable(value) {
+  return !value || value.length === 0 || value.length === 1 && Object.keys(value[0]).length === 0;
+}
+
 const numberPrecisionMapper = {
   offset: 2,
   duration: 0,
@@ -160,7 +164,7 @@ class KarasCompress {
     }
     let { props, animate, children } = item;
     if(animate) {
-      animate.forEach(animateItem => {
+      animate.forEach((animateItem, index) => {
         let { value, options } = animateItem;
         Object.keys(options).forEach(item => {
           if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
@@ -193,18 +197,16 @@ class KarasCompress {
                     break;
                   }
                   else {
-                    let j = i + 3;
+                    let lastEqualIndex = i + 2;
+                    let j = lastEqualIndex + 1;
                     // 找到不相等的那个索引
                     for(; j < len; j++) {
                       if(!equalAnimateValue(start, value[j])) {
                         break;
                       }
+                      lastEqualIndex = j;
                     }
-                    // 找到最后都相等没跳出j会等于len
-                    if(j === len) {
-                      j--;
-                    }
-                    value.splice(i + 1, j - i - 1);
+                    value.splice(i + 1, lastEqualIndex - i - 1);
                   }
                   i += 2;
                 }
@@ -237,7 +239,17 @@ class KarasCompress {
             this.compressCssObject(item, false, true);
           }
         });
+        // 经过处理之后animateItem的value是否只有一个空对象，如果是，则移除整个animateItem
+        if (isAnimateValueUnavailable(value)) {
+          animate[index] = null;
+        }
       });
+      const filterAnimate = animate.filter(item => !!item);
+      if (filterAnimate.length === 0) {
+        delete item.animate;
+      } else {
+        item.animate = filterAnimate;
+      }
     }
     if(props) {
       // 压缩props

@@ -1,0 +1,65 @@
+{
+  "tagName": "div",
+  "props":{"style":{"width":110.109,"height":80.997}},
+  "children": [{
+    "tagName": "span",
+    "props":{"style":{"width":110.109,"height":80.997}},
+    "animate": [{
+      "value": [{
+        "height":120, "offset":0
+      }, {
+        "height":120, "offset":0.1
+      }, {
+        "height":120, "offset":0.3
+      }, {
+        "height": 100, "offset":0.4
+      }, {
+        "height": 100, "offset":0.5
+      }, {
+        "height": 100, "offset":1
+      }],
+      "options":{"duration":6000}
+    }, {
+      "value": [{
+        "height":120, "offset":0
+      }, {
+        "height":120, "offset":1
+      }],
+      "options":{"duration":6000}
+    }, {
+      "value": [{
+        "height":130, "offset":0
+      }, {
+        "height":130, "offset":0.5
+      }, {
+        "height": 130, "offset": 1
+      }],
+      "options":{"duration":6000}
+    }, {
+      "value": [{
+        "height":140, "offset":0
+      }, {
+        "height":140, "offset":0.5
+      }, {
+        "height": 140, "offset": 0.8
+      }, {
+        "height": 140, "offset": 1
+      }],
+      "options":{"duration":6000}
+    }]
+  }],
+  "animate": [{
+    "value": [{
+      "display":"block", "width":120, "offset":0
+    }, {
+      "display":"block", "width":120, "offset":0.1
+    }, {
+      "display":"block", "width":120, "offset":0.2
+    }, {
+      "display":"block", "width":120, "offset":0.3
+    }, {
+      "display":"block", "width": 100, "offset":1
+    }],
+    "options":{"duration":6000}
+  }]
+}

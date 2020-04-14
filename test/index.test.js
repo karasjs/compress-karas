@@ -9,6 +9,8 @@ const fullMin = require('./fixture/full.min');
 const img = require('./fixture/img');
 const vars = require('./fixture/vars');
 const varsMin = require('./fixture/vars.min');
+const animation = require('./fixture/animation');
+const emptyAnimation = require('./fixture/emptyAnimation');
 
 const assert = require('assert');
 
@@ -68,6 +70,41 @@ describe('test', () => {
     assert.deepEqual(controls[0], [0.9152,0.1021,0.9122,0.0987]);
     assert.deepEqual(animate[0].v[1].os, 0.21);
     assert.deepEqual(animate[0].o.dt, 6000);
+  });
+  it('test on animation', async () => {
+    const compressor = new KarasCompress(animation);
+    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    console.log(result);
+    assert.deepEqual(result.animate[0].v, [
+      { w: 120 },
+      { w: 120, os: 0.3 },
+      { w: 100 },
+    ]);
+    assert.deepEqual(result.children[0].animate[0].v, [
+      { h: 120 },
+      { h: 120, os: 0.3 },
+      { h: 100, os: 0.4 },
+      { h: 100, os: 0.5 },
+      { h: 100 },
+    ]);
+    assert.deepEqual(result.children[0].animate[1].v, [
+      { h: 120 },
+    ]);
+    assert.deepEqual(result.children[0].animate[2].v, [
+      { h: 130 },
+    ]);
+    assert.deepEqual(result.children[0].animate[3].v, [
+      { h: 140 },
+    ]);
+  });
+  it('test on emptyAnimation', async () => {
+    const compressor = new KarasCompress(emptyAnimation);
+    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    assert.equal(!!result.animate, false);
+    assert.deepEqual(result.children[0].animate, [{
+      v: [{ w: 120 }],
+      o: { dt: 6000 },
+    }]);
   });
   it('test on full', async () => {
     const compressor = new KarasCompress(full);

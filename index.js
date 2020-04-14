@@ -292,6 +292,10 @@ function equalAnimateValue(a, b) {
   return res;
 }
 
+function isAnimateValueUnavailable(value) {
+  return !value || value.length === 0 || value.length === 1 && Object.keys(value[0]).length === 0;
+}
+
 var numberPrecisionMapper = {
   offset: 2,
   duration: 0,
@@ -439,7 +443,7 @@ var KarasCompress = /*#__PURE__*/function () {
           children = item.children;
 
       if (animate) {
-        animate.forEach(function (animateItem) {
+        animate.forEach(function (animateItem, index) {
           var value = animateItem.value,
               options = animateItem.options;
           Object.keys(options).forEach(function (item) {
@@ -477,20 +481,18 @@ var KarasCompress = /*#__PURE__*/function () {
                       value.splice(i + 1, 1);
                       break;
                     } else {
-                      var j = i + 3; // 找到不相等的那个索引
+                      var lastEqualIndex = i + 2;
+                      var j = lastEqualIndex + 1; // 找到不相等的那个索引
 
                       for (; j < len; j++) {
                         if (!equalAnimateValue(start, value[j])) {
                           break;
                         }
-                      } // 找到最后都相等没跳出j会等于len
 
-
-                      if (j === len) {
-                        j--;
+                        lastEqualIndex = j;
                       }
 
-                      value.splice(i + 1, j - i - 1);
+                      value.splice(i + 1, lastEqualIndex - i - 1);
                     }
 
                     i += 2;
@@ -527,8 +529,21 @@ var KarasCompress = /*#__PURE__*/function () {
 
               _this2.compressCssObject(item, false, true);
             }
-          });
+          }); // 经过处理之后animateItem的value是否只有一个空对象，如果是，则移除整个animateItem
+
+          if (isAnimateValueUnavailable(value)) {
+            animate[index] = null;
+          }
         });
+        var filterAnimate = animate.filter(function (item) {
+          return !!item;
+        });
+
+        if (filterAnimate.length === 0) {
+          delete item.animate;
+        } else {
+          item.animate = filterAnimate;
+        }
       }
 
       if (props) {
