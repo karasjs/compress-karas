@@ -1,0 +1,38 @@
+{
+  "tagName": "div",
+  "props":{
+    "style":{
+      "width": 90,
+      "height": 10
+    }
+  },
+  "children": [{
+    "tagName": "$polygon",
+    "props": {
+      "style": {
+        "position": "absolute",
+        "left": 49,
+        "top": 1,
+        "display": "none",
+        "fill": "transparent",
+        "stroke": "#000",
+        "opacity": 1
+      }
+    }
+  }],
+  "animate": [{
+    "value": [
+      {
+        "easing": "easeIn"
+      },
+      {
+        "width": 90,
+        "height": 20
+      }
+    ],
+    "options": {
+      "duration": 5000,
+      "fill": "forwards"
+    }
+  }]
+}
