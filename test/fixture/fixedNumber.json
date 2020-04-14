@@ -14,9 +14,15 @@
       ]
     },
     "animate": [{
-      "value":[{"display":"block","offset":0},{"offset":0.20833333333333334,"display":"block",
-        "width": "120"
-      },{"offset":0.275,"display":"block"},{"offset":0.3333333333333333,"display":"block"},{"offset":0.38055555555555554,"display":"block"},{"offset":0.39166666666666666,"display":"block"},{"offset":1,"display":"block"}],
+      "value":[
+        {"display":"block","offset":0},
+        {"offset":0.20833333333333334,"display":"block", "width": "120"},
+        {"offset":0.275,"display":"block"},
+        {"offset":0.3333333333333333,"display":"block"},
+        {"offset":0.38055555555555554,"display":"block"},
+        {"offset":0.39166666666666666,"display":"block"},
+        {"offset":1,"display":"block"}
+      ],
       "options":{"duration":6000.4}
     }]
   }]

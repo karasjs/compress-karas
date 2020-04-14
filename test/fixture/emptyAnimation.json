@@ -1,0 +1,22 @@
+{
+  "tagName": "div",
+  "props":{"style":{"width":110.109,"height":80.997}},
+  "children": [{
+    "tagName": "span",
+    "props":{"style":{"width":110.109,"height":80.997}},
+    "animate": [{
+      "value": [{}],
+      "options":{"duration":6000}
+    }, {
+      "value": [{
+        "width": 120,
+        "offset": 0
+      }],
+      "options":{"duration":6000}
+    }]
+  }],
+  "animate": [{
+    "value": [{}],
+    "options":{"duration":6000}
+  }]
+}
