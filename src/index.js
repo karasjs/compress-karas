@@ -215,26 +215,7 @@ class KarasCompress {
       return;
     }
     let { id, libraryId, init, props, animate, children } = json;
-    // id是library内才有的
-    if (!isNil(id)) {
-      json.id = this.libraryIdMapper[id];
-    }
-    // 引用library的item，只有init没有props
-    if (init) {
-      const canDeleteDefaultProperty = level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL;
-      const canAbbr = level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL;
-      this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
-      this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
-      this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
-      if(canAbbr) {
-        if (init.points) init.points = this.cutNumber(init.points);
-        if (init.controls) init.controls = this.cutNumber(init.controls);
-      }
-    }
-    // 引用library，压缩引用ID
-    if (libraryId) {
-      json.libraryId = this.compressLibraryId(libraryId);
-    }
+    const isRefLibrary = !!libraryId;
     if(animate) {
       animate.forEach((animateItem, index) => {
         let { value, options } = animateItem;
@@ -304,7 +285,7 @@ class KarasCompress {
         }
         value && value.forEach(item => {
           if (level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL) {
-            this.removeDuplicatePropertyInFrame(item, props.style);
+            this.removeDuplicatePropertyInFrame(item, isRefLibrary ? init.style : props.style, libraryId);
           }
           if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
             this.compressBezier(item);
@@ -326,6 +307,26 @@ class KarasCompress {
       } else {
         json.animate = filterAnimate;
       }
+    }
+    // id是library内才有的
+    if (!isNil(id)) {
+      json.id = this.libraryIdMapper[id];
+    }
+    // 引用library的item，只有init没有props
+    if (init) {
+      const canDeleteDefaultProperty = level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL;
+      const canAbbr = level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL;
+      this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
+      this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
+      this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
+      if(canAbbr) {
+        if (init.points) init.points = this.cutNumber(init.points);
+        if (init.controls) init.controls = this.cutNumber(init.controls);
+      }
+    }
+    // 引用library，压缩引用ID
+    if (libraryId) {
+      json.libraryId = this.compressLibraryId(libraryId);
     }
     if(props) {
       // 压缩props
@@ -380,13 +381,20 @@ class KarasCompress {
   // 移除每帧中属性
   // 1. 与style重复，则删除
   // 2. style没有，判断是否为默认属性值，如果是则删除
-  removeDuplicatePropertyInFrame(frame, style) {
+  removeDuplicatePropertyInFrame(frame, style, libraryId) {
     if (!frame) return;
+    const libraryStyle = get(this.libraryMapper, `${libraryId}.props.style`);
+
     Object.keys(frame).forEach(propertyName => {
       if (style && !isNil(style[propertyName])) {
         // style重复
-        if (frame[propertyName] === style[propertyName]) {
+        if (isEqual(frame[propertyName], style[propertyName])) {
           delete frame[propertyName];
+        }
+      } else if (libraryStyle && !isNil(libraryStyle[propertyName])) {
+        // 与library重复
+        if (isEqual(frame[propertyName], libraryStyle[propertyName])) {
+          delete libraryStyle[propertyName];
         }
       } else {
         // 判断是否为默认属性值
@@ -399,7 +407,7 @@ class KarasCompress {
 
   // 移除props与library中相同的属性
   removeDuplicatePropertyInLibrary(props, libraryId, key) {
-    const libraryProps = this.libraryMapper[libraryId] && this.libraryMapper[libraryId].props;
+    const libraryProps = get(this.libraryMapper, `${libraryId}.props`);
     if (!key || !props[key] || !libraryProps[key]) return;
     if (isEqual(props[key], libraryProps[key])) {
       delete props[key];

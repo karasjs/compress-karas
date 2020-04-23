@@ -507,30 +507,8 @@ var KarasCompress = /*#__PURE__*/function () {
           init = json.init,
           props = json.props,
           animate = json.animate,
-          children = json.children; // id是library内才有的
-
-      if (!isNil(id)) {
-        json.id = this.libraryIdMapper[id];
-      } // 引用library的item，只有init没有props
-
-
-      if (init) {
-        var canDeleteDefaultProperty = level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL;
-        var canAbbr = level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL;
-        this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
-        this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
-        this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
-
-        if (canAbbr) {
-          if (init.points) init.points = this.cutNumber(init.points);
-          if (init.controls) init.controls = this.cutNumber(init.controls);
-        }
-      } // 引用library，压缩引用ID
-
-
-      if (libraryId) {
-        json.libraryId = this.compressLibraryId(libraryId);
-      }
+          children = json.children;
+      var isRefLibrary = !!libraryId;
 
       if (animate) {
         animate.forEach(function (animateItem, index) {
@@ -611,7 +589,7 @@ var KarasCompress = /*#__PURE__*/function () {
 
           value && value.forEach(function (item) {
             if (level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL) {
-              _this3.removeDuplicatePropertyInFrame(item, props.style);
+              _this3.removeDuplicatePropertyInFrame(item, isRefLibrary ? init.style : props.style, libraryId);
             }
 
             if (level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL) {
@@ -639,6 +617,30 @@ var KarasCompress = /*#__PURE__*/function () {
         } else {
           json.animate = filterAnimate;
         }
+      } // id是library内才有的
+
+
+      if (!isNil(id)) {
+        json.id = this.libraryIdMapper[id];
+      } // 引用library的item，只有init没有props
+
+
+      if (init) {
+        var canDeleteDefaultProperty = level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL;
+        var canAbbr = level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL;
+        this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
+        this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
+        this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
+
+        if (canAbbr) {
+          if (init.points) init.points = this.cutNumber(init.points);
+          if (init.controls) init.controls = this.cutNumber(init.controls);
+        }
+      } // 引用library，压缩引用ID
+
+
+      if (libraryId) {
+        json.libraryId = this.compressLibraryId(libraryId);
       }
 
       if (props) {
@@ -714,15 +716,22 @@ var KarasCompress = /*#__PURE__*/function () {
 
   }, {
     key: "removeDuplicatePropertyInFrame",
-    value: function removeDuplicatePropertyInFrame(frame, style) {
+    value: function removeDuplicatePropertyInFrame(frame, style, libraryId) {
       var _this5 = this;
 
       if (!frame) return;
+      var libraryStyle = get(this.libraryMapper, "".concat(libraryId, ".props.style"));
+      console.log(frame, libraryStyle, style);
       Object.keys(frame).forEach(function (propertyName) {
         if (style && !isNil(style[propertyName])) {
           // style重复
-          if (frame[propertyName] === style[propertyName]) {
+          if (isEqual(frame[propertyName], style[propertyName])) {
             delete frame[propertyName];
+          }
+        } else if (libraryStyle && !isNil(libraryStyle[propertyName])) {
+          // 与library重复
+          if (isEqual(frame[propertyName], libraryStyle[propertyName])) {
+            delete libraryStyle[propertyName];
           }
         } else {
           // 判断是否为默认属性值
@@ -736,7 +745,7 @@ var KarasCompress = /*#__PURE__*/function () {
   }, {
     key: "removeDuplicatePropertyInLibrary",
     value: function removeDuplicatePropertyInLibrary(props, libraryId, key) {
-      var libraryProps = this.libraryMapper[libraryId] && this.libraryMapper[libraryId].props;
+      var libraryProps = get(this.libraryMapper, "".concat(libraryId, ".props"));
       if (!key || !props[key] || !libraryProps[key]) return;
 
       if (isEqual(props[key], libraryProps[key])) {

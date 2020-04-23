@@ -160,6 +160,12 @@ describe('test', () => {
           w: 'auto'
         },
       },
+      animate: [{
+        v: [{}, {
+          w: 120
+        }],
+        o: { dt: 167 },
+      }]
     }, {
       libraryId: 2,
       init: {

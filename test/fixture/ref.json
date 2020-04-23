@@ -55,7 +55,19 @@
         "height": 30,
         "width": "auto"
       }
-    }
+    },
+    "animate": [{
+      "value": [{
+        "width": "auto",
+        "offset": 0
+      }, {
+        "width": 120,
+        "offset": 1
+      }],
+      "options": {
+        "duration": 166.66667
+      }
+    }]
   }, {
     "libraryId": "c",
     "init": {
