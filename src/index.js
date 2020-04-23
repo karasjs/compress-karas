@@ -8,12 +8,15 @@
  */
 import karas from 'karas';
 import 'regenerator-runtime';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash.clonedeep';
+import isEqual from 'lodash.isEqual';
+import get from 'lodash.get';
 
 import * as innerCompressImage from './compressImage';
 import level from './level';
 
 const { XOM } = karas.reset;
+const { isNil } = karas.util;
 const { fullCssProperty, fullAnimate, fullAnimateOption } = karas.abbr;
 const { LEVEL_ENUM } = level;
 
@@ -103,7 +106,7 @@ class KarasCompress {
       }
     }
     else if(typeof json === 'object') {
-      animationJson = cloneDeep(json);
+      animationJson = json;
     }
     this.animationJson = animationJson;
     if(!(this.animationJson && typeof this.animationJson === 'object')) {
@@ -111,21 +114,39 @@ class KarasCompress {
     }
     this.options = {
       quality: options && options.quality || 0.8,
-      compressImage: options && options.compressImage || innerCompressImage,
+      compressImage: options && options.compressImage,
+      useCanvasCompress: options && options.useCanvasCompress,
       ...options,
     };
+    // init library
+    this.initLibrary();
   }
 
   async compress(level, positionPrecision) {
     if(!this.animationJson || typeof this.animationJson !== 'object' || level === LEVEL_ENUM.NONE) {
       return this.animationJson;
     }
+    const animationJson = cloneDeep(this.animationJson);
     this.setPositionPrecision(positionPrecision);
     let imagesPromise = [];
-    this.traverseImage(this.animationJson.children, imagesPromise);
+    this.traverseImage(animationJson.library, imagesPromise);
+    this.traverseImage(animationJson.children, imagesPromise);
     await Promise.all(imagesPromise);
-    this.traverseJson(this.animationJson, level);
-    return this.animationJson;
+    this.traverseJson(animationJson, level);
+    this.traverseJson(animationJson.library, level);
+    return animationJson;
+  }
+
+  initLibrary() {
+    const library = this.animationJson.library;
+    this.libraryIdMapper = {};
+    this.libraryMapper = {};
+    if (!library || library.length === 0) return;
+    let compressedLibraryId = 0;
+    library.forEach(item => {
+      this.libraryIdMapper[item.id] = compressedLibraryId++;
+      this.libraryMapper[item.id] = item;
+    });
   }
 
   setPositionPrecision(value = 0) {
@@ -138,19 +159,44 @@ class KarasCompress {
       return;
     }
     children.forEach(item => {
-      if(item.tagName === 'img' && item.props.src) {
+      // 是否引用library
+      const isRefLibrary = !!(item.libraryId && item.init);
+      let isImage = false;
+      let width;
+      let height;
+      let src;
+      if (isRefLibrary) {
+        const library = this.libraryMapper[item.libraryId];
+        width = get(item, 'init.style.width') || get(library, 'props.style.width');
+        height = get(item, 'init.style.height') || get(library, 'props.style.height');
+        src = get(item, 'init.src');
+        isImage = library && library.tagName === 'img' && !!src;
+      } else {
+        width = get(item, 'props.style.width');
+        height = get(item, 'props.style.height');
+        src = get(item, 'props.src');
+        isImage = item.tagName === 'img' && !!src;
+      }
+      if(isImage) {
+        const props = isRefLibrary ? item.init : item.props;
+        if (!props) return;
         const quality = this.options.quality;
-        const compressImage = this.options.compressImage;
-        async function asyncCompressImage(item) {
-          item.props.src = await compressImage({
-            width: item.props.style.width,
-            height: item.props.style.height,
-            src: item.props.src,
-            quality,
-          });
+        const compressImage = this.options.useCanvasCompress
+          ? innerCompressImage
+          : this.options.compressImage;
+        async function asyncCompressImage() {
+          let compressedSrc = src;
+          if (compressImage) {
+            compressedSrc = await compressImage({
+              width,
+              height,
+              src,
+              quality,
+            });
+          }
+          props.src = compressedSrc;
         }
-
-        promiseList.push(asyncCompressImage(item));
+        promiseList.push(asyncCompressImage());
       }
       else if(item.children && item.children.length > 0) {
         this.traverseImage(item.children, promiseList);
@@ -158,11 +204,18 @@ class KarasCompress {
     });
   }
 
-  traverseJson(item, level) {
-    if(!item) {
+  traverseJson(json, level) {
+    if(!json) {
       return;
     }
-    let { props, animate, children } = item;
+    if (Array.isArray(json)) {
+      json.forEach(item => {
+        this.traverseJson(item, level);
+      });
+      return;
+    }
+    let { id, libraryId, init, props, animate, children } = json;
+    const isRefLibrary = !!libraryId;
     if(animate) {
       animate.forEach((animateItem, index) => {
         let { value, options } = animateItem;
@@ -232,7 +285,7 @@ class KarasCompress {
         }
         value && value.forEach(item => {
           if (level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL) {
-            this.removeDuplicatePropertyInFrame(item, props.style);
+            this.removeDuplicatePropertyInFrame(item, isRefLibrary ? init.style : props.style, libraryId);
           }
           if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
             this.compressBezier(item);
@@ -243,43 +296,80 @@ class KarasCompress {
         if (isAnimateValueUnavailable(value)) {
           animate[index] = null;
         }
+        // 判断当前animate是否与上一个相同，如果相同，则移除
+        if (isEqual(animate[index], animate[index - 1])) {
+          animate[index] = null;
+        }
       });
       const filterAnimate = animate.filter(item => !!item);
       if (filterAnimate.length === 0) {
-        delete item.animate;
+        delete json.animate;
       } else {
-        item.animate = filterAnimate;
+        json.animate = filterAnimate;
       }
+    }
+    // id是library内才有的
+    if (!isNil(id)) {
+      json.id = this.libraryIdMapper[id];
+    }
+    // 引用library的item，只有init没有props
+    if (init) {
+      const canDeleteDefaultProperty = level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL;
+      const canAbbr = level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL;
+      this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
+      this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
+      this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
+      if(canAbbr) {
+        if (init.points) init.points = this.cutNumber(init.points);
+        if (init.controls) init.controls = this.cutNumber(init.controls);
+      }
+    }
+    // 引用library，压缩引用ID
+    if (libraryId) {
+      json.libraryId = this.compressLibraryId(libraryId);
     }
     if(props) {
       // 压缩props
       const canDeleteDefaultProperty = level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL;
       const canAbbr = level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL;
       this.compressCssObject(props.style, canDeleteDefaultProperty, canAbbr);
-      if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
+      if(canAbbr) {
         if (props.points) props.points = this.cutNumber(props.points);
         if (props.controls) props.controls = this.cutNumber(props.controls);
       }
     }
-    if(children) {
+    if(children && Array.isArray(children)) {
       children.forEach(item => {
         this.traverseJson(item, level);
       });
     }
   }
 
-  compressCssObject(cssObj, canDeleteDefaultProperty = false, canAbbr = false) {
+  compressCssObject(cssObj, canDeleteDefaultProperty = false, canAbbr = false, libraryId) {
     if(!cssObj) {
       return;
     }
     Object.keys(cssObj).forEach(propertyName => {
-      if (karas.util.isNil(cssObj[propertyName])) {
+      if (isNil(cssObj[propertyName])) {
         // 删除空值
         delete cssObj[propertyName];
-      } else if(canDeleteDefaultProperty && this.checkDefaultProperty(propertyName, cssObj[propertyName])) {
+      } else if(canDeleteDefaultProperty) {
         // 检查默认值
-        delete cssObj[propertyName];
-      } else if (canAbbr) {
+        // 如果是引用library，则需要判断是否默认值出现在library中
+        // 1.出现在library中且值不为默认值，不能删除
+        // 2.出现在library中且值为默认值，可以删除
+        const libraryItem = this.libraryMapper[libraryId];
+        const libraryStyleCssProperties = libraryItem && libraryItem.props && libraryItem.props.style && libraryItem.props.style[propertyName];
+        const matchDefault = this.checkDefaultProperty(propertyName, cssObj[propertyName]);
+        const libraryMatchDefault = this.checkDefaultProperty(propertyName, libraryStyleCssProperties);
+        const matchLibrary = isEqual(cssObj[propertyName], libraryStyleCssProperties);
+        if (matchLibrary) {
+          delete cssObj[propertyName];
+        } else if (matchDefault && (!libraryId || libraryMatchDefault)) {
+          delete cssObj[propertyName];
+        }
+      }
+      if (canAbbr && !isNil(cssObj[propertyName])) {
         let shortPropertyName = this.compressCssPropertyName(propertyName);
         let fixedPropertyValue = this.cutNumber(cssObj[propertyName], numberPrecisionMapper[propertyName]);
         delete cssObj[propertyName];
@@ -291,13 +381,20 @@ class KarasCompress {
   // 移除每帧中属性
   // 1. 与style重复，则删除
   // 2. style没有，判断是否为默认属性值，如果是则删除
-  removeDuplicatePropertyInFrame(frame, style) {
+  removeDuplicatePropertyInFrame(frame, style, libraryId) {
     if (!frame) return;
+    const libraryStyle = get(this.libraryMapper, `${libraryId}.props.style`);
+
     Object.keys(frame).forEach(propertyName => {
-      if (style && !karas.util.isNil(style[propertyName])) {
+      if (style && !isNil(style[propertyName])) {
         // style重复
-        if (frame[propertyName] === style[propertyName]) {
+        if (isEqual(frame[propertyName], style[propertyName])) {
           delete frame[propertyName];
+        }
+      } else if (libraryStyle && !isNil(libraryStyle[propertyName])) {
+        // 与library重复
+        if (isEqual(frame[propertyName], libraryStyle[propertyName])) {
+          delete libraryStyle[propertyName];
         }
       } else {
         // 判断是否为默认属性值
@@ -306,6 +403,15 @@ class KarasCompress {
         }
       }
     });
+  }
+
+  // 移除props与library中相同的属性
+  removeDuplicatePropertyInLibrary(props, libraryId, key) {
+    const libraryProps = get(this.libraryMapper, `${libraryId}.props`);
+    if (!key || !props[key] || !libraryProps[key]) return;
+    if (isEqual(props[key], libraryProps[key])) {
+      delete props[key];
+    }
   }
 
   checkDefaultProperty(k, v) {
@@ -352,6 +458,10 @@ class KarasCompress {
       const fixedControls = controls.map(item => this.cutNumber(item, 3));
       item.easing = `(${fixedControls.join(',')})`;
     }
+  }
+
+  compressLibraryId(libraryId) {
+    return this.libraryIdMapper[libraryId] >= 0 ? this.libraryIdMapper[libraryId] : libraryId;
   }
 }
 

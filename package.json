@@ -1,12 +1,13 @@
 {
   "name": "compress-karas",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "compress json for karas",
   "main": "./index",
   "files": [
     "src",
     "index.js",
     "index.min.js",
+    "index.d.ts",
     "README.md"
   ],
   "scripts": {
@@ -32,7 +33,9 @@
   "homepage": "https://github.com/karasjs/compress-karas#readme",
   "dependencies": {
     "karas": "^0.25.3",
-    "lodash": "^4.17.15",
+    "lodash.clonedeep": "^4.5.0",
+    "lodash.get": "^4.4.2",
+    "lodash.isequal": "^4.5.0",
     "regenerator-runtime": "^0.13.5"
   },
   "devDependencies": {

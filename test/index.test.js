@@ -11,6 +11,8 @@ const vars = require('./fixture/vars');
 const varsMin = require('./fixture/vars.min');
 const animation = require('./fixture/animation');
 const emptyAnimation = require('./fixture/emptyAnimation');
+const duplicateAnimate = require('./fixture/duplicateAnimate.json');
+const ref = require('./fixture/ref.json');
 
 const assert = require('assert');
 
@@ -74,7 +76,6 @@ describe('test', () => {
   it('test on animation', async () => {
     const compressor = new KarasCompress(animation);
     const result = await compressor.compress(KarasCompress.LEVEL.ALL);
-    console.log(result);
     assert.deepEqual(result.animate[0].v, [
       { w: 120 },
       { w: 120, os: 0.3 },
@@ -104,6 +105,75 @@ describe('test', () => {
     assert.deepEqual(result.children[0].animate, [{
       v: [{ w: 120 }],
       o: { dt: 6000 },
+    }]);
+  });
+  it('test on duplicate animate', async () => {
+    const compressor = new KarasCompress(duplicateAnimate);
+    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    assert.deepEqual(result.animate.length, 1);
+  });
+  it('test on library', async () => {
+    const compressor = new KarasCompress(ref, {
+      compressImage: item => Promise.resolve(`${item.src}_compressed_${item.width}_${item.height}_${item.quality}`),
+      quality: 0.7,
+    });
+    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    assert.deepEqual(result.library, [{
+      id: 0,
+      tagName: 'div',
+      props: {
+        style: { c: '#FF0000' }
+      }
+    }, {
+      id: 1,
+      tagName: 'img',
+      props: {
+        src: 'xxoo1_compressed_100_80_0.7',
+        style: {
+          w: 100,
+          h: 80,
+        },
+      }
+    }, {
+      id: 2,
+      tagName: '$polygon',
+      props: {
+        points: [
+          [0.9152,0.1021],
+          [0.9122,0.0987],
+        ],
+        controls: [
+          [0.9152,0.1021,0.9122,0.0987],
+          [0.7988,-0.0288,0.618,-0.0333],
+        ],
+      },
+    }]);
+    assert.deepEqual(result.children, [{
+      libraryId: 0,
+      init: { style: { bc: '#0000FF' } }
+    }, {
+      libraryId: 1,
+      init: {
+        src: 'xxoo2_compressed_auto_30_0.7',
+        style: {
+          h: 30,
+          w: 'auto'
+        },
+      },
+      animate: [{
+        v: [{}, {
+          w: 120
+        }],
+        o: { dt: 167 },
+      }]
+    }, {
+      libraryId: 2,
+      init: {
+        points: [
+          [1.9152,1.1021],
+          [1.9122,1.0987],
+        ]
+      },
     }]);
   });
   it('test on full', async () => {
