@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.2](https://github.com/karasjs/compress-karas/compare/v0.1.1...v0.1.2) (2020-04-23)
+
+
+### Features
+
+* add library ([2c2584c](https://github.com/karasjs/compress-karas/commit/2c2584c24dc18a4e777ad8d2155b58a6c98be48a))
+* 修改library下的animation处理 ([342a0a7](https://github.com/karasjs/compress-karas/commit/342a0a77690d0a8fd6b793ecabed69c95fa952cd))
+
 ### 0.1.1 (2020-04-14)
 
 
