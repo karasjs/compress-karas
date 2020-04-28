@@ -209,23 +209,12 @@ var innerCompressImage = /*#__PURE__*/Object.freeze({
   'default': compressImage
 });
 
-var LEVEL_ENUM = {
-  NONE: 0,
-  ABBR: 1,
-  DUPLICATE: 2,
-  ALL: 3
-};
-var level = {
-  LEVEL_ENUM: LEVEL_ENUM
-};
-
 var XOM = karas.reset.XOM;
 var isNil = karas.util.isNil;
 var _karas$abbr = karas.abbr,
     fullCssProperty = _karas$abbr.fullCssProperty,
     fullAnimate = _karas$abbr.fullAnimate,
     fullAnimateOption = _karas$abbr.fullAnimateOption;
-var LEVEL_ENUM$1 = level.LEVEL_ENUM;
 
 function equalArr(a, b) {
   if (a.length !== b.length) {
@@ -304,6 +293,13 @@ var numberPrecisionMapper = {
   duration: 0,
   delay: 0,
   endDelay: 0
+}; // 默认不压缩图片，处理缩写和重复属性
+
+var defaultCompressOption = {
+  image: false,
+  abbr: true,
+  duplicate: true,
+  positionPrecision: 2
 };
 
 var KarasCompress = /*#__PURE__*/function () {
@@ -340,34 +336,52 @@ var KarasCompress = /*#__PURE__*/function () {
   _createClass(KarasCompress, [{
     key: "compress",
     value: function () {
-      var _compress = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(level, positionPrecision) {
-        var animationJson, imagesPromise;
+      var _compress = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+        var option,
+            needCompressImage,
+            needAbbr,
+            needDuplicate,
+            _option$positionPreci,
+            positionPrecision,
+            animationJson,
+            imagesPromise,
+            _args = arguments;
+
         return regeneratorRuntime.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                if (!(!this.animationJson || _typeof(this.animationJson) !== 'object' || level === LEVEL_ENUM$1.NONE)) {
-                  _context.next = 2;
+                option = _args.length > 0 && _args[0] !== undefined ? _args[0] : defaultCompressOption;
+
+                if (!(!this.animationJson || _typeof(this.animationJson) !== 'object' || !option)) {
+                  _context.next = 3;
                   break;
                 }
 
                 return _context.abrupt("return", this.animationJson);
 
-              case 2:
+              case 3:
+                needCompressImage = option.image, needAbbr = option.abbr, needDuplicate = option.duplicate, _option$positionPreci = option.positionPrecision, positionPrecision = _option$positionPreci === void 0 ? 2 : _option$positionPreci;
                 animationJson = cloneDeep(this.animationJson);
                 this.setPositionPrecision(positionPrecision);
                 imagesPromise = [];
+
+                if (!needCompressImage) {
+                  _context.next = 12;
+                  break;
+                }
+
                 this.traverseImage(animationJson.library, imagesPromise);
                 this.traverseImage(animationJson.children, imagesPromise);
-                _context.next = 9;
+                _context.next = 12;
                 return Promise.all(imagesPromise);
 
-              case 9:
-                this.traverseJson(animationJson, level);
-                this.traverseJson(animationJson.library, level);
+              case 12:
+                this.traverseJson(animationJson, needAbbr, needDuplicate);
+                this.traverseJson(animationJson.library, needAbbr, needDuplicate);
                 return _context.abrupt("return", animationJson);
 
-              case 12:
+              case 15:
               case "end":
                 return _context.stop();
             }
@@ -375,7 +389,7 @@ var KarasCompress = /*#__PURE__*/function () {
         }, _callee, this);
       }));
 
-      function compress(_x, _x2) {
+      function compress() {
         return _compress.apply(this, arguments);
       }
 
@@ -488,7 +502,7 @@ var KarasCompress = /*#__PURE__*/function () {
     }
   }, {
     key: "traverseJson",
-    value: function traverseJson(json, level) {
+    value: function traverseJson(json, needAbbr, needDuplicate) {
       var _this3 = this;
 
       if (!json) {
@@ -497,7 +511,7 @@ var KarasCompress = /*#__PURE__*/function () {
 
       if (Array.isArray(json)) {
         json.forEach(function (item) {
-          _this3.traverseJson(item, level);
+          _this3.traverseJson(item, needAbbr, needDuplicate);
         });
         return;
       }
@@ -515,7 +529,7 @@ var KarasCompress = /*#__PURE__*/function () {
           var value = animateItem.value,
               options = animateItem.options;
           Object.keys(options).forEach(function (item) {
-            if (level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL) {
+            if (needAbbr) {
               var shortOptionName = _this3.compressAnimationOptionName(item);
 
               var fixedOptionValue = _this3.cutNumber(options[item], numberPrecisionMapper[item]);
@@ -525,7 +539,7 @@ var KarasCompress = /*#__PURE__*/function () {
             }
           });
           Object.keys(animateItem).forEach(function (item) {
-            if (level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL) {
+            if (needAbbr) {
               var shortName = _this3.compressAnimateName(item);
 
               if (shortName !== item) {
@@ -535,7 +549,7 @@ var KarasCompress = /*#__PURE__*/function () {
             }
           });
 
-          if (level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL) {
+          if (needDuplicate) {
             var len = value.length; // 去除重复帧，寻找和当前帧样式相同的帧，当跨度>=3时，删除中间的，当跨度2且总长2时保留1个
 
             if (len > 2) {
@@ -588,15 +602,16 @@ var KarasCompress = /*#__PURE__*/function () {
           }
 
           value && value.forEach(function (item) {
-            if (level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL) {
+            if (needDuplicate) {
               _this3.removeDuplicatePropertyInFrame(item, isRefLibrary ? init.style : props.style, libraryId);
             }
 
-            if (level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL) {
+            if (needAbbr) {
               _this3.compressBezier(item);
+            } // 前面已经通过removeDuplicatePropertyInFrame移除了重复的属性，这里不需要处理
 
-              _this3.compressCssObject(item, false, true);
-            }
+
+            _this3.compressCssObject(item, false, needAbbr);
           }); // 经过处理之后animateItem的value是否只有一个空对象，如果是，则移除整个animateItem
 
           if (isAnimateValueUnavailable(value)) {
@@ -626,13 +641,11 @@ var KarasCompress = /*#__PURE__*/function () {
 
 
       if (init) {
-        var canDeleteDefaultProperty = level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL;
-        var canAbbr = level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL;
-        this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
+        this.compressCssObject(init.style, needDuplicate, needAbbr, libraryId);
         this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
         this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
 
-        if (canAbbr) {
+        if (needAbbr) {
           if (init.points) init.points = this.cutNumber(init.points);
           if (init.controls) init.controls = this.cutNumber(init.controls);
         }
@@ -645,13 +658,9 @@ var KarasCompress = /*#__PURE__*/function () {
 
       if (props) {
         // 压缩props
-        var _canDeleteDefaultProperty = level === LEVEL_ENUM$1.DUPLICATE || level === LEVEL_ENUM$1.ALL;
+        this.compressCssObject(props.style, needDuplicate, needAbbr);
 
-        var _canAbbr = level === LEVEL_ENUM$1.ABBR || level === LEVEL_ENUM$1.ALL;
-
-        this.compressCssObject(props.style, _canDeleteDefaultProperty, _canAbbr);
-
-        if (_canAbbr) {
+        if (needAbbr) {
           if (props.points) props.points = this.cutNumber(props.points);
           if (props.controls) props.controls = this.cutNumber(props.controls);
         }
@@ -659,7 +668,7 @@ var KarasCompress = /*#__PURE__*/function () {
 
       if (children && Array.isArray(children)) {
         children.forEach(function (item) {
-          _this3.traverseJson(item, level);
+          _this3.traverseJson(item, needAbbr, needDuplicate);
         });
       }
     }
@@ -721,7 +730,6 @@ var KarasCompress = /*#__PURE__*/function () {
 
       if (!frame) return;
       var libraryStyle = get(this.libraryMapper, "".concat(libraryId, ".props.style"));
-      console.log(frame, libraryStyle, style);
       Object.keys(frame).forEach(function (propertyName) {
         if (style && !isNil(style[propertyName])) {
           // style重复
@@ -826,8 +834,6 @@ var KarasCompress = /*#__PURE__*/function () {
 
   return KarasCompress;
 }();
-
-KarasCompress.LEVEL = LEVEL_ENUM$1;
 
 module.exports = KarasCompress;
 //# sourceMappingURL=index.js.map

@@ -26,18 +26,18 @@ describe('test', () => {
   });
   it('test on none', async () => {
     const compressor = new KarasCompress(full);
-    const result = await compressor.compress(KarasCompress.LEVEL.NONE);
+    const result = await compressor.compress(null);
     assert.notStrictEqual(compressor.animationData, full);
     assert.deepEqual(result, full);
   });
   it('test on abbr', async () => {
     const compressor = new KarasCompress(abbr);
-    const result = await compressor.compress(KarasCompress.LEVEL.ABBR);
+    const result = await compressor.compress({ abbr: true });
     assert.deepEqual(result, abbrMin);
   });
   it('test on duplicate', async () => {
     const compressor = new KarasCompress(duplicate);
-    const result = await compressor.compress(KarasCompress.LEVEL.DUPLICATE);
+    const result = await compressor.compress({ duplicate: true });
     assert.deepEqual(result, duplicateMin);
   });
   it('test on image compress', async () => {
@@ -45,18 +45,23 @@ describe('test', () => {
       compressImage: item => Promise.resolve(`${item.src}_compressed_${item.width}_${item.height}_${item.quality}`),
       quality: 0.7,
     });
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    const result = await compressor.compress({ image: true });
     assert.deepEqual(result.children[0].props.src, 'xxoo1_compressed_40_30_0.7');
     assert.deepEqual(result.children[1].children[0].props.src, 'xxoo2_compressed_100_80_0.7');
   });
   it('test on vars', async () => {
     const compressor = new KarasCompress(vars);
-    const result = await compressor.compress(KarasCompress.LEVEL.ABBR);
+    const result = await compressor.compress({ abbr: true });
     assert.deepEqual(result, varsMin);
   });
   it('test on fixedNumber', async () => {
     const compressor = new KarasCompress(fixedNumber);
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL, 1);
+    const result = await compressor.compress({
+      image: true,
+      abbr: true,
+      duplicate: true,
+      positionPrecision: 1,
+    });
     const {
       animate,
       props: {
@@ -75,7 +80,7 @@ describe('test', () => {
   });
   it('test on animation', async () => {
     const compressor = new KarasCompress(animation);
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    const result = await compressor.compress();
     assert.deepEqual(result.animate[0].v, [
       { w: 120 },
       { w: 120, os: 0.3 },
@@ -100,7 +105,7 @@ describe('test', () => {
   });
   it('test on emptyAnimation', async () => {
     const compressor = new KarasCompress(emptyAnimation);
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    const result = await compressor.compress();
     assert.equal(!!result.animate, false);
     assert.deepEqual(result.children[0].animate, [{
       v: [{ w: 120 }],
@@ -109,7 +114,7 @@ describe('test', () => {
   });
   it('test on duplicate animate', async () => {
     const compressor = new KarasCompress(duplicateAnimate);
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    const result = await compressor.compress();
     assert.deepEqual(result.animate.length, 1);
   });
   it('test on library', async () => {
@@ -117,7 +122,12 @@ describe('test', () => {
       compressImage: item => Promise.resolve(`${item.src}_compressed_${item.width}_${item.height}_${item.quality}`),
       quality: 0.7,
     });
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL);
+    const result = await compressor.compress({
+      image: true,
+      abbr: true,
+      duplicate: true,
+      positionPrecision: 2,
+    });
     assert.deepEqual(result.library, [{
       id: 0,
       tagName: 'div',
@@ -178,7 +188,12 @@ describe('test', () => {
   });
   it('test on full', async () => {
     const compressor = new KarasCompress(full);
-    const result = await compressor.compress(KarasCompress.LEVEL.ALL, 2);
+    const result = await compressor.compress({
+      image: true,
+      abbr: true,
+      duplicate: true,
+      positionPrecision: 2,
+    });
     assert.deepEqual(result, fullMin);
   });
 });
