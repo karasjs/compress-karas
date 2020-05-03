@@ -15,7 +15,8 @@ import get from 'lodash.get';
 import * as innerCompressImage from './compressImage';
 import level from './level';
 
-const { XOM } = karas.reset;
+const { DOM, GEOM } = karas.reset;
+const XOM = Object.assign({}, DOM, GEOM);
 const { isNil } = karas.util;
 const { fullCssProperty, fullAnimate, fullAnimateOption } = karas.abbr;
 const { LEVEL_ENUM } = level;
