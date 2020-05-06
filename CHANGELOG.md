@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.2](https://github.com/karasjs/compress-karas/compare/v0.2.1...v0.2.2) (2020-05-06)
+
+
+### Features
+
+* 自己合成DOM和GEOM的并集XOM ([79c5285](https://github.com/karasjs/compress-karas/commit/79c5285fa208cf1a54f888a8487ee08a9b10f16a))
+
 ### [0.2.1](https://github.com/karasjs/compress-karas/compare/v0.1.2...v0.2.1) (2020-04-28)
 
 
