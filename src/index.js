@@ -13,13 +13,11 @@ import isEqual from 'lodash.isEqual';
 import get from 'lodash.get';
 
 import * as innerCompressImage from './compressImage';
-import level from './level';
 
 const { DOM, GEOM } = karas.reset;
 const XOM = Object.assign({}, DOM, GEOM);
 const { isNil } = karas.util;
 const { fullCssProperty, fullAnimate, fullAnimateOption } = karas.abbr;
-const { LEVEL_ENUM } = level;
 
 function equalArr(a, b) {
   if(a.length !== b.length) {
@@ -96,6 +94,14 @@ const numberPrecisionMapper = {
   endDelay: 0,
 };
 
+// 默认不压缩图片，处理缩写和重复属性
+const defaultCompressOption = {
+  image: false,
+  abbr: true,
+  duplicate: true,
+  positionPrecision: 2
+};
+
 class KarasCompress {
   constructor(json, options) {
     let animationJson;
@@ -123,18 +129,26 @@ class KarasCompress {
     this.initLibrary();
   }
 
-  async compress(level, positionPrecision) {
-    if(!this.animationJson || typeof this.animationJson !== 'object' || level === LEVEL_ENUM.NONE) {
+  async compress(option = defaultCompressOption) {
+    if(!this.animationJson || typeof this.animationJson !== 'object' || !option) {
       return this.animationJson;
     }
+    const {
+      image: needCompressImage,
+      abbr: needAbbr,
+      duplicate: needDuplicate,
+      positionPrecision = 2,
+    } = option;
     const animationJson = cloneDeep(this.animationJson);
     this.setPositionPrecision(positionPrecision);
     let imagesPromise = [];
-    this.traverseImage(animationJson.library, imagesPromise);
-    this.traverseImage(animationJson.children, imagesPromise);
-    await Promise.all(imagesPromise);
-    this.traverseJson(animationJson, level);
-    this.traverseJson(animationJson.library, level);
+    if (needCompressImage) {
+      this.traverseImage(animationJson.library, imagesPromise);
+      this.traverseImage(animationJson.children, imagesPromise);
+      await Promise.all(imagesPromise);
+    }
+    this.traverseJson(animationJson, needAbbr, needDuplicate);
+    this.traverseJson(animationJson.library, needAbbr, needDuplicate);
     return animationJson;
   }
 
@@ -205,13 +219,13 @@ class KarasCompress {
     });
   }
 
-  traverseJson(json, level) {
+  traverseJson(json, needAbbr, needDuplicate) {
     if(!json) {
       return;
     }
     if (Array.isArray(json)) {
       json.forEach(item => {
-        this.traverseJson(item, level);
+        this.traverseJson(item, needAbbr, needDuplicate);
       });
       return;
     }
@@ -221,7 +235,7 @@ class KarasCompress {
       animate.forEach((animateItem, index) => {
         let { value, options } = animateItem;
         Object.keys(options).forEach(item => {
-          if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
+          if(needAbbr) {
             let shortOptionName = this.compressAnimationOptionName(item);
             let fixedOptionValue = this.cutNumber(options[item], numberPrecisionMapper[item]);
             delete options[item];
@@ -229,7 +243,7 @@ class KarasCompress {
           }
         });
         Object.keys(animateItem).forEach(item => {
-          if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
+          if(needAbbr) {
             let shortName = this.compressAnimateName(item);
             if(shortName !== item) {
               animateItem[shortName] = animateItem[item];
@@ -237,7 +251,7 @@ class KarasCompress {
             }
           }
         });
-        if(level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL) {
+        if(needDuplicate) {
           let len = value.length;
           // 去除重复帧，寻找和当前帧样式相同的帧，当跨度>=3时，删除中间的，当跨度2且总长2时保留1个
           if(len > 2) {
@@ -285,13 +299,14 @@ class KarasCompress {
           }
         }
         value && value.forEach(item => {
-          if (level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL) {
+          if (needDuplicate) {
             this.removeDuplicatePropertyInFrame(item, isRefLibrary ? init.style : props.style, libraryId);
           }
-          if(level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL) {
+          if(needAbbr) {
             this.compressBezier(item);
-            this.compressCssObject(item, false, true);
           }
+          // 前面已经通过removeDuplicatePropertyInFrame移除了重复的属性，这里不需要处理
+          this.compressCssObject(item, false, needAbbr);
         });
         // 经过处理之后animateItem的value是否只有一个空对象，如果是，则移除整个animateItem
         if (isAnimateValueUnavailable(value)) {
@@ -315,12 +330,10 @@ class KarasCompress {
     }
     // 引用library的item，只有init没有props
     if (init) {
-      const canDeleteDefaultProperty = level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL;
-      const canAbbr = level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL;
-      this.compressCssObject(init.style, canDeleteDefaultProperty, canAbbr, libraryId);
+      this.compressCssObject(init.style, needDuplicate, needAbbr, libraryId);
       this.removeDuplicatePropertyInLibrary(init, libraryId, 'points');
       this.removeDuplicatePropertyInLibrary(init, libraryId, 'controls');
-      if(canAbbr) {
+      if(needAbbr) {
         if (init.points) init.points = this.cutNumber(init.points);
         if (init.controls) init.controls = this.cutNumber(init.controls);
       }
@@ -331,17 +344,15 @@ class KarasCompress {
     }
     if(props) {
       // 压缩props
-      const canDeleteDefaultProperty = level === LEVEL_ENUM.DUPLICATE || level === LEVEL_ENUM.ALL;
-      const canAbbr = level === LEVEL_ENUM.ABBR || level === LEVEL_ENUM.ALL;
-      this.compressCssObject(props.style, canDeleteDefaultProperty, canAbbr);
-      if(canAbbr) {
+      this.compressCssObject(props.style, needDuplicate, needAbbr);
+      if(needAbbr) {
         if (props.points) props.points = this.cutNumber(props.points);
         if (props.controls) props.controls = this.cutNumber(props.controls);
       }
     }
     if(children && Array.isArray(children)) {
       children.forEach(item => {
-        this.traverseJson(item, level);
+        this.traverseJson(item, needAbbr, needDuplicate);
       });
     }
   }
@@ -466,7 +477,6 @@ class KarasCompress {
   }
 }
 
-KarasCompress.LEVEL = LEVEL_ENUM;
 export default KarasCompress;
 
 

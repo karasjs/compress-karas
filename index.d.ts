@@ -11,14 +11,14 @@ interface KarasOption {
   useCanvasCompress?: boolean;
 }
 
-declare enum Level {
-  NONE,
-  ABBR,
-  DUPLICATE,
-  ALL,
+interface compressOption {
+  image?: boolean;
+  abbr?: boolean;
+  duplicate?: boolean;
+  positionPrecision?: number;
 }
 
 declare class KarasCompress {
   constructor(json: string|object, options:KarasOption);
-  compress(level: Level, positionPrecision: number): Promise<object>;
+  compress(option: compressOption): Promise<object>;
 }
