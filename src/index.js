@@ -175,7 +175,7 @@ class KarasCompress {
     }
     children.forEach(item => {
       // 是否引用library
-      const isRefLibrary = !!(item.libraryId && item.init);
+      const isRefLibrary = !!(item.libraryId !== undefined && item.init);
       let isImage = false;
       let width;
       let height;
@@ -230,7 +230,7 @@ class KarasCompress {
       return;
     }
     let { id, libraryId, init, props, animate, children } = json;
-    const isRefLibrary = !!libraryId;
+    const isRefLibrary = libraryId !== undefined;
     if(animate) {
       animate.forEach((animateItem, index) => {
         let { value, options } = animateItem;
