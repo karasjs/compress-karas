@@ -1,6 +1,6 @@
 {
   "name": "compress-karas",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "compress json for karas",
   "main": "./index",
   "files": [
