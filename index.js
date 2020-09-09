@@ -209,39 +209,17 @@ var innerCompressImage = /*#__PURE__*/Object.freeze({
   'default': compressImage
 });
 
-var XOM = karas.reset.XOM;
-var isNil = karas.util.isNil;
-var _karas$abbr = karas.abbr,
-    fullCssProperty = _karas$abbr.fullCssProperty,
-    fullAnimate = _karas$abbr.fullAnimate,
-    fullAnimateOption = _karas$abbr.fullAnimateOption;
-
-function equalArr(a, b) {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  for (var i = 0, len = a.length; i < len; i++) {
-    var ai = a[i];
-    var bi = b[i];
-    var isArrayA = Array.isArray(ai);
-    var isArrayB = Array.isArray(bi);
-
-    if (isArrayA && isArrayB) {
-      if (!equalArr(ai, bi)) {
-        return false;
-      }
-    } else if (isArrayA || isArrayB) {
-      return false;
-    }
-
-    if (ai !== bi) {
-      return false;
-    }
-  }
-
-  return true;
-}
+var _karas$style$reset = karas.style.reset,
+    DOM = _karas$style$reset.DOM,
+    GEOM = _karas$style$reset.GEOM;
+var XOM = Object.assign({}, DOM, GEOM);
+var _karas$util = karas.util,
+    isNil = _karas$util.isNil,
+    equalArr = _karas$util.equalArr;
+var _karas$parser$abbr = karas.parser.abbr,
+    fullCssProperty = _karas$parser$abbr.fullCssProperty,
+    fullAnimate = _karas$parser$abbr.fullAnimate,
+    fullAnimateOption = _karas$parser$abbr.fullAnimateOption;
 
 function equalAnimateValue(a, b) {
   var keyList = [];
@@ -429,7 +407,7 @@ var KarasCompress = /*#__PURE__*/function () {
 
       children.forEach(function (item) {
         // 是否引用library
-        var isRefLibrary = !!(item.libraryId && item.init);
+        var isRefLibrary = !!(item.libraryId !== undefined && item.init);
         var isImage = false;
         var width;
         var height;
@@ -522,7 +500,7 @@ var KarasCompress = /*#__PURE__*/function () {
           props = json.props,
           animate = json.animate,
           children = json.children;
-      var isRefLibrary = !!libraryId;
+      var isRefLibrary = libraryId !== undefined;
 
       if (animate) {
         animate.forEach(function (animateItem, index) {

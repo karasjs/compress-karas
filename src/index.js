@@ -14,34 +14,10 @@ import get from 'lodash.get';
 
 import * as innerCompressImage from './compressImage';
 
-const { DOM, GEOM } = karas.reset;
+const { DOM, GEOM } = karas.style.reset;
 const XOM = Object.assign({}, DOM, GEOM);
-const { isNil } = karas.util;
-const { fullCssProperty, fullAnimate, fullAnimateOption } = karas.abbr;
-
-function equalArr(a, b) {
-  if(a.length !== b.length) {
-    return false;
-  }
-  for(let i = 0, len = a.length; i < len; i++) {
-    let ai = a[i];
-    let bi = b[i];
-    let isArrayA = Array.isArray(ai);
-    let isArrayB = Array.isArray(bi);
-    if(isArrayA && isArrayB) {
-      if(!equalArr(ai, bi)) {
-        return false;
-      }
-    }
-    else if(isArrayA || isArrayB) {
-      return false;
-    }
-    if(ai !== bi) {
-      return false;
-    }
-  }
-  return true;
-}
+const { isNil, equalArr } = karas.util;
+const { fullCssProperty, fullAnimate, fullAnimateOption } = karas.parser.abbr;
 
 function equalAnimateValue(a, b) {
   let keyList = [];
