@@ -9,7 +9,7 @@
 import karas from 'karas';
 import 'regenerator-runtime';
 import cloneDeep from 'lodash.clonedeep';
-import isEqual from 'lodash.isEqual';
+import isEqual from 'lodash.isequal';
 import get from 'lodash.get';
 
 import * as innerCompressImage from './compressImage';
