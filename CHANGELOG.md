@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.2.5](https://github.com/karasjs/compress-karas/compare/v0.2.3...v0.2.5) (2021-01-11)
+
+
+### Features
+
+* update ([e30c1fa](https://github.com/karasjs/compress-karas/commit/e30c1fa1690666fedced223cc27c60297155ab0f))
+* 修改引用 ([fe885e9](https://github.com/karasjs/compress-karas/commit/fe885e92dfa7bc652e67006b174b71a7c6be3840))
+
 ### [0.2.3](https://github.com/karasjs/compress-karas/compare/v0.2.2...v0.2.3) (2020-05-13)
 
 ### [0.2.2](https://github.com/karasjs/compress-karas/compare/v0.2.1...v0.2.2) (2020-05-06)
